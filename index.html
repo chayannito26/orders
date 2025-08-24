@@ -120,13 +120,19 @@
                 delivered: 'status-delivered'
             }[orderData.status] || 'bg-gray-200 text-gray-800';
 
-            // Customer Info HTML
+            // Prepare email display
+            const email = orderData.customerInfo?.email;
+            const emailHtml = email
+                ? `<a href="mailto:${email}" class="text-indigo-600 hover:underline">${email}</a>`
+                : 'N/A';
+
+            // Customer Info HTML (use orderId field and include email)
             const customerInfoHtml = `
                 <div class="p-5 border-b border-gray-200">
                     <div class="flex justify-between items-start">
                         <div>
                             <h2 class="text-xl font-semibold text-gray-800">${orderData.customerInfo.name}</h2>
-                            <p class="text-sm text-gray-500">Order ID: ${orderData.id || orderData.orderID || 'N/A'}</p>
+                            <p class="text-sm text-gray-500">Order ID: ${orderData.orderId || orderData.orderID || 'N/A'}</p>
                         </div>
                         <span class="text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}">${orderData.status}</span>
                     </div>
@@ -134,6 +140,7 @@
                         <p><strong>Phone:</strong> ${orderData.customerInfo.phone}</p>
                         <p><strong>Roll:</strong> ${orderData.customerInfo.roll}</p>
                         <p><strong>Department:</strong> ${orderData.customerInfo.department}</p>
+                        <p><strong>Email:</strong> ${emailHtml}</p>
                         <p><strong>bKash ID:</strong> ${orderData.customerInfo.bkashTransactionId}</p>
                     </div>
                 </div>
@@ -154,12 +161,39 @@
                 </li>`;
             }).join('');
 
-            // Card Footer and Actions HTML
+            // Compute totals and coupon info
+            const subtotal = Number(orderData.total ?? 0);
+            const discount = Number(orderData.discount ?? (orderData.appliedCoupon?.discountValue ?? 0));
+            const finalTotal = Number(orderData.finalTotal ?? Math.max(0, subtotal - discount));
+            const couponCode = orderData.appliedCoupon?.code;
+
+            // Card Footer and Actions HTML (show coupon/discount/final total)
             const footerHtml = `
                 <div class="p-5 bg-gray-50">
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-sm text-gray-500 flex-1">${formatDate(orderData.orderDate)}</span>
-                        <p class="text-xl font-bold text-indigo-600 ml-auto text-right whitespace-nowrap">Total: ৳${orderData.total}</p>
+                    </div>
+                    <div class="space-y-1 mb-4 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span class="font-medium">৳${subtotal}</span>
+                        </div>
+                        ${discount > 0 || couponCode ? `
+                            ${couponCode ? `
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Coupon</span>
+                                    <span class="font-medium">${couponCode}</span>
+                                </div>
+                            ` : ''}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Discount</span>
+                                <span class="font-medium text-green-700">−৳${discount}</span>
+                            </div>
+                        ` : ''}
+                        <div class="flex justify-between">
+                            <span class="text-gray-900 font-semibold">Final Total</span>
+                            <span class="text-xl font-bold text-indigo-600">৳${finalTotal}</span>
+                        </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <select class="status-select w-full sm:flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
