@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Order Management</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Manage and view customer orders in real-time with the Chayannito 26 Order Management Dashboard.">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Chayannito 26 Order Management Dashboard">
+    <meta property="og:description" content="Manage and view customer orders in real-time with the Chayannito 26 Order Management Dashboard.">
+    <meta property="og:image" content="https://chayannito26.com/orders/image.jpg">
+    <meta property="og:url" content="https://chayannito26.com/orders">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chayannito 26 Order Management Dashboard">
+    <meta property="og:brand" content="Chayannito 26">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Chayannito 26 Order Management Dashboard">
+    <meta name="twitter:description" content="Manage and view customer orders in real-time with the Chayannito 26 Order Management Dashboard.">
+    <meta name="twitter:image" content="https://chayannito26.com/orders/image.jpg">
+    <meta name="twitter:site" content="@chayannito26">
+    <meta name="twitter:creator" content="@wasi_master">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -47,7 +65,7 @@
         <div id="loader" class="flex justify-center items-center h-64">
             <div class="loader"></div>
         </div>
-        
+
         <!-- No Orders Message -->
         <div id="no-orders" class="hidden text-center py-16">
              <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
@@ -291,7 +309,7 @@
 
         onSnapshot(ordersCollection, (snapshot) => {
             loader.style.display = 'none'; // Hide loader once we get data
-            
+
             if (snapshot.empty) {
                 ordersContainer.innerHTML = '';
                 noOrdersMessage.style.display = 'block';
@@ -305,7 +323,7 @@
             snapshot.forEach(doc => {
                 orders.push({ id: doc.id, ...doc.data() });
             });
-            
+
             // Sort orders to show pending ones first, then by date
             orders.sort((a, b) => {
                  const statusOrder = { 'pending': 1, 'fulfilled': 2, 'delivered': 3 };
