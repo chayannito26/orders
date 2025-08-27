@@ -82,268 +82,310 @@
         </main>
     </div>
 
-    <!-- Firebase and App Logic -->
+    <!-- Firebase and App Logic with simple client-side persistent password gate -->
     <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, setLogLevel, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // ======= CONFIG: set the password here =======
+        // Change this value to your desired password. This is client-side and can be viewed in source.
+        const ADMIN_PASSWORD = 'changeme123';
+        const UNLOCK_KEY = 'orders_unlocked_v1';
 
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDsI5v9okHOdxbEw8k8hXwzPzZMpDrirbM",
-            authDomain: "chayannito-26.firebaseapp.com",
-            projectId: "chayannito-26",
-            storageBucket: "chayannito-26.firebasestorage.app",
-            messagingSenderId: "127749935084",
-            appId: "1:127749935084:web:8bf6df50ce2cbc96cdbac9",
-            measurementId: "G-CRHHT66GTQ"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        setLogLevel('debug');
-
-        const ordersContainer = document.getElementById('orders-container');
-        const loader = document.getElementById('loader');
-        const noOrdersMessage = document.getElementById('no-orders');
-
-        /**
-         * Formats a date string into a more readable format.
-         * @param {string} dateString - The ISO date string.
-         * @returns {string} - The formatted date.
-         */
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            const d = new Date(dateString);
-            const datePart = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            return `${datePart} at ${timePart}`;
-        }
-
-        /**
-         * Creates and returns an HTML element for an order card.
-         * @param {object} orderData - The data for a single order.
-         * @returns {HTMLElement} - The order card element.
-         */
-        function createOrderCard(orderData) {
-            const card = document.createElement('div');
-            // make the card a hover group and relative for the absolute X button
-            card.className = 'bg-white relative group rounded-lg shadow-md overflow-hidden transform hover:scale-[1.02] transition-transform duration-300';
-            card.dataset.orderId = orderData.id;
-
-            const statusClass = {
-                pending: 'status-pending',
-                fulfilled: 'status-fulfilled',
-                delivered: 'status-delivered'
-            }[orderData.status] || 'bg-gray-200 text-gray-800';
-
-            // Prepare email display
-            const email = orderData.customerInfo?.email;
-            const emailHtml = email
-                ? `<a href="mailto:${email}" class="text-indigo-600 hover:underline">${email}</a>`
-                : 'N/A';
-
-            // Customer Info HTML (use orderId field and include email)
-            const customerInfoHtml = `
-                <div class="p-5 border-b border-gray-200">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-800">${orderData.customerInfo.name}</h2>
-                            <p class="text-sm text-gray-500">Order ID: ${orderData.orderId || orderData.orderID || 'N/A'}</p>
-                        </div>
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}">${orderData.status}</span>
+        // Show a simple lock screen overlay that stores an "unlocked" flag in localStorage when correct
+        function showLockScreen() {
+            const overlay = document.createElement('div');
+            overlay.id = 'lock-overlay';
+            overlay.className = 'fixed inset-0 bg-white/95 flex items-center justify-center z-50 p-4';
+            overlay.innerHTML = `
+                <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4">Enter Password</h2>
+                    <input id="admin-password-input" type="password" autocomplete="off" class="w-full p-3 border rounded mb-3" placeholder="Password" />
+                    <div class="flex items-center justify-between gap-2">
+                        <button id="admin-password-submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Unlock</button>
+                        <button id="admin-password-clear" class="text-sm text-gray-600 underline">Clear saved unlock</button>
                     </div>
-                    <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600">
-                        <p><strong>Phone:</strong> ${orderData.customerInfo.phone}</p>
-                        <p><strong>Roll:</strong> ${orderData.customerInfo.roll}</p>
-                        <p><strong>Department:</strong> ${orderData.customerInfo.department}</p>
-                        <p><strong>Email:</strong> ${emailHtml}</p>
-                        <p><strong>bKash ID:</strong> ${orderData.customerInfo.bkashTransactionId}</p>
-                    </div>
+                    <p id="admin-password-error" class="text-red-600 mt-3 hidden"></p>
                 </div>
             `;
+            document.body.appendChild(overlay);
 
-            // Items HTML
-            const itemsHtml = orderData.items.map(item => {
-                const variation = item.selectedVariation ? ` <span class="text-gray-500 font-normal">(${item.selectedVariation})</span>` : '';
-                const qty = item.quantity || 0;
-                const price = item.price || 0;
-                return `
-                <li class="flex justify-between items-center py-2">
-                    <div class="flex-1 min-w-0">
-                        <p class="font-medium truncate">${item.name}${variation}</p>
-                        <p class="text-sm text-gray-500">Qty: ${qty} x ৳${price}</p>
-                    </div>
-                    <p class="font-semibold text-gray-800 whitespace-nowrap">৳${qty * price}</p>
-                </li>`;
-            }).join('');
+            const input = document.getElementById('admin-password-input');
+            input.focus();
 
-            // Compute totals and coupon info
-            const subtotal = Number(orderData.total ?? 0);
-            const discount = Number(orderData.discount ?? (orderData.appliedCoupon?.discountValue ?? 0));
-            const finalTotal = Number(orderData.finalTotal ?? Math.max(0, subtotal - discount));
-            const couponCode = orderData.appliedCoupon?.code;
+            document.getElementById('admin-password-submit').addEventListener('click', () => attemptUnlock(input.value));
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptUnlock(input.value); });
 
-            // Card Footer and Actions HTML (show coupon/discount/final total)
-            const footerHtml = `
-                <div class="p-5 bg-gray-50">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-sm text-gray-500 flex-1">${formatDate(orderData.orderDate)}</span>
-                    </div>
-                    <div class="space-y-1 mb-4 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Subtotal</span>
-                            <span class="font-medium">৳${subtotal}</span>
+            document.getElementById('admin-password-clear').addEventListener('click', () => {
+                localStorage.removeItem(UNLOCK_KEY);
+                const err = document.getElementById('admin-password-error');
+                err.textContent = 'Saved unlock cleared. Reload to require password again.';
+                err.classList.remove('hidden');
+            });
+        }
+
+        function attemptUnlock(entered) {
+            const err = document.getElementById('admin-password-error');
+            if (entered === ADMIN_PASSWORD) {
+                localStorage.setItem(UNLOCK_KEY, '1');
+                const overlay = document.getElementById('lock-overlay');
+                if (overlay) overlay.remove();
+                startApp();
+            } else {
+                err.textContent = 'Incorrect password';
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 3000);
+            }
+        }
+
+        function isUnlocked() { return localStorage.getItem(UNLOCK_KEY) === '1'; }
+
+        // If unlocked previously, start immediately; otherwise show lock screen and wait
+        if (isUnlocked()) {
+            startApp();
+        } else {
+            showLockScreen();
+        }
+
+        // Main app logic moved into a function so it only runs after unlock
+        async function startApp() {
+            // Import Firebase modules
+            const [{ initializeApp }, { getFirestore, collection, onSnapshot, doc, updateDoc, setLogLevel, getDocs, deleteDoc }] = await Promise.all([
+                import('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js')
+            ]);
+
+            // Your Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyDsI5v9okHOdxbEw8k8hXwzPzZMpDrirbM",
+                authDomain: "chayannito-26.firebaseapp.com",
+                projectId: "chayannito-26",
+                storageBucket: "chayannito-26.firebasestorage.app",
+                messagingSenderId: "127749935084",
+                appId: "1:127749935084:web:8bf6df50ce2cbc96cdbac9",
+                measurementId: "G-CRHHT66GTQ"
+            };
+
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            setLogLevel('debug');
+
+            const ordersContainer = document.getElementById('orders-container');
+            const loader = document.getElementById('loader');
+            const noOrdersMessage = document.getElementById('no-orders');
+
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const d = new Date(dateString);
+                const datePart = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                return `${datePart} at ${timePart}`;
+            }
+
+            function createOrderCard(orderData) {
+                const card = document.createElement('div');
+                card.className = 'bg-white relative group rounded-lg shadow-md overflow-hidden transform hover:scale-[1.02] transition-transform duration-300';
+                card.dataset.orderId = orderData.id;
+
+                const statusClass = {
+                    pending: 'status-pending',
+                    fulfilled: 'status-fulfilled',
+                    delivered: 'status-delivered'
+                }[orderData.status] || 'bg-gray-200 text-gray-800';
+
+                const email = orderData.customerInfo?.email;
+                const emailHtml = email
+                    ? `<a href="mailto:${email}" class="text-indigo-600 hover:underline">${email}</a>`
+                    : 'N/A';
+
+                const customerInfoHtml = `
+                    <div class="p-5 border-b border-gray-200">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800">${orderData.customerInfo.name}</h2>
+                                <p class="text-sm text-gray-500">Order ID: ${orderData.orderId || orderData.orderID || 'N/A'}</p>
+                            </div>
+                            <span class="text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}">${orderData.status}</span>
                         </div>
-                        ${discount > 0 || couponCode ? `
-                            ${couponCode ? `
+                        <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600">
+                            <p><strong>Phone:</strong> ${orderData.customerInfo.phone}</p>
+                            <p><strong>Roll:</strong> ${orderData.customerInfo.roll}</p>
+                            <p><strong>Department:</strong> ${orderData.customerInfo.department}</p>
+                            <p><strong>Email:</strong> ${emailHtml}</p>
+                            <p><strong>bKash ID:</strong> ${orderData.customerInfo.bkashTransactionId}</p>
+                        </div>
+                    </div>
+                `;
+
+                const itemsHtml = orderData.items.map(item => {
+                    const variation = item.selectedVariation ? ` <span class="text-gray-500 font-normal">(${item.selectedVariation})</span>` : '';
+                    const qty = item.quantity || 0;
+                    const price = item.price || 0;
+                    return `
+                    <li class="flex justify-between items-center py-2">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium truncate">${item.name}${variation}</p>
+                            <p class="text-sm text-gray-500">Qty: ${qty} x ৳${price}</p>
+                        </div>
+                        <p class="font-semibold text-gray-800 whitespace-nowrap">৳${qty * price}</p>
+                    </li>`;
+                }).join('');
+
+                const subtotal = Number(orderData.total ?? 0);
+                const discount = Number(orderData.discount ?? (orderData.appliedCoupon?.discountValue ?? 0));
+                const finalTotal = Number(orderData.finalTotal ?? Math.max(0, subtotal - discount));
+                const couponCode = orderData.appliedCoupon?.code;
+
+                const footerHtml = `
+                    <div class="p-5 bg-gray-50">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-sm text-gray-500 flex-1">${formatDate(orderData.orderDate)}</span>
+                        </div>
+                        <div class="space-y-1 mb-4 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="font-medium">৳${subtotal}</span>
+                            </div>
+                            ${discount > 0 || couponCode ? `
+                                ${couponCode ? `
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Coupon</span>
+                                        <span class="font-medium">${couponCode}</span>
+                                    </div>
+                                ` : ''}
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">Coupon</span>
-                                    <span class="font-medium">${couponCode}</span>
+                                    <span class="text-gray-600">Discount</span>
+                                    <span class="font-medium text-green-700">−৳${discount}</span>
                                 </div>
                             ` : ''}
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Discount</span>
-                                <span class="font-medium text-green-700">−৳${discount}</span>
+                                <span class="text-gray-900 font-semibold">Final Total</span>
+                                <span class="text-xl font-bold text-indigo-600">৳${finalTotal}</span>
                             </div>
-                        ` : ''}
-                        <div class="flex justify-between">
-                            <span class="text-gray-900 font-semibold">Final Total</span>
-                            <span class="text-xl font-bold text-indigo-600">৳${finalTotal}</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <select class="status-select w-full sm:flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                <option value="pending" ${orderData.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="fulfilled" ${orderData.status === 'fulfilled' ? 'selected' : ''}>Fulfilled</option>
+                                <option value="delivered" ${orderData.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            </select>
+                            <button class="update-status-btn w-full sm:flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
+                                Update Status
+                            </button>
                         </div>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <select class="status-select w-full sm:flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                            <option value="pending" ${orderData.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="fulfilled" ${orderData.status === 'fulfilled' ? 'selected' : ''}>Fulfilled</option>
-                            <option value="delivered" ${orderData.status === 'delivered' ? 'selected' : ''}>Delivered</option>
-                        </select>
-                        <button class="update-status-btn w-full sm:flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
-                            Update Status
-                        </button>
+                `;
+
+                card.innerHTML = `
+                    <button
+                        class="delete-order-x-btn hidden group-hover:flex items-center justify-center absolute top-2 right-2 w-8 h-8 rounded-full bg-red-600 text-white shadow ring-1 ring-red-500 hover:bg-red-700 hover:ring-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+                        aria-label="Delete order"
+                        title="Delete order"
+                    >
+                        &#x2715;
+                    </button>
+                    ${customerInfoHtml}
+                    <div class="p-5">
+                        <h3 class="font-semibold mb-2">Items Ordered</h3>
+                        <ul class="divide-y divide-gray-200">${itemsHtml}</ul>
                     </div>
-                </div>
-            `;
+                    ${footerHtml}
+                `;
 
-            // add the hover-only delete X at top-right of the card
-            card.innerHTML = `
-                <button
-                    class="delete-order-x-btn hidden group-hover:flex items-center justify-center absolute top-2 right-2 w-8 h-8 rounded-full bg-red-600 text-white shadow ring-1 ring-red-500 hover:bg-red-700 hover:ring-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
-                    aria-label="Delete order"
-                    title="Delete order"
-                >
-                    &#x2715;
-                </button>
-                ${customerInfoHtml}
-                <div class="p-5">
-                    <h3 class="font-semibold mb-2">Items Ordered</h3>
-                    <ul class="divide-y divide-gray-200">${itemsHtml}</ul>
-                </div>
-                ${footerHtml}
-            `;
+                const updateButton = card.querySelector('.update-status-btn');
+                const statusSelect = card.querySelector('.status-select');
+                const deleteXButton = card.querySelector('.delete-order-x-btn');
 
-            // Add event listeners
-            const updateButton = card.querySelector('.update-status-btn');
-            const statusSelect = card.querySelector('.status-select');
-            const deleteXButton = card.querySelector('.delete-order-x-btn');
-
-            updateButton.addEventListener('click', async () => {
-                const newStatus = statusSelect.value;
-                const orderId = orderData.id;
-                updateButton.textContent = 'Updating...';
-                updateButton.disabled = true;
-                try {
-                    const orderRef = doc(db, 'orders', orderId);
-                    await updateDoc(orderRef, { status: newStatus });
-                    setTimeout(() => {
+                updateButton.addEventListener('click', async () => {
+                    const newStatus = statusSelect.value;
+                    const orderId = orderData.id;
+                    updateButton.textContent = 'Updating...';
+                    updateButton.disabled = true;
+                    try {
+                        const orderRef = doc(db, 'orders', orderId);
+                        await updateDoc(orderRef, { status: newStatus });
+                        setTimeout(() => {
+                            updateButton.textContent = 'Update Status';
+                            updateButton.disabled = false;
+                        }, 1000);
+                    } catch (error) {
+                        console.error("Error updating order status: ", error);
+                        alert("Failed to update status. Please try again.");
                         updateButton.textContent = 'Update Status';
                         updateButton.disabled = false;
-                    }, 1000);
-                } catch (error) {
-                    console.error("Error updating order status: ", error);
-                    alert("Failed to update status. Please try again.");
-                    updateButton.textContent = 'Update Status';
-                    updateButton.disabled = false;
-                }
-            });
+                    }
+                });
 
-            deleteXButton.addEventListener('click', async () => {
-                const orderId = orderData.id;
-                if (!confirm(`Delete order ${orderId}? This cannot be undone.`)) return;
-                try {
-                    await deleteDoc(doc(db, 'orders', orderId));
-                    // UI updates via onSnapshot
-                } catch (error) {
-                    console.error("Error deleting order: ", error);
-                    alert("Failed to delete order. Please try again.");
-                }
-            });
+                deleteXButton.addEventListener('click', async () => {
+                    const orderId = orderData.id;
+                    if (!confirm(`Delete order ${orderId}? This cannot be undone.`)) return;
+                    try {
+                        await deleteDoc(doc(db, 'orders', orderId));
+                    } catch (error) {
+                        console.error("Error deleting order: ", error);
+                        alert("Failed to delete order. Please try again.");
+                    }
+                });
 
-            return card;
-        }
-
-        // Listen for real-time updates on the 'orders' collection
-        const ordersCollection = collection(db, 'orders');
-
-        // Delete-all handler
-        const deleteAllBtn = document.getElementById('delete-all-orders');
-        if (deleteAllBtn) {
-            deleteAllBtn.addEventListener('click', async () => {
-                if (!confirm('Delete ALL orders? This cannot be undone.')) return;
-                deleteAllBtn.disabled = true;
-                const prevText = deleteAllBtn.textContent;
-                deleteAllBtn.textContent = 'Deleting...';
-                try {
-                    const snap = await getDocs(ordersCollection);
-                    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'orders', d.id))));
-                } catch (e) {
-                    console.error('Error deleting all orders:', e);
-                    alert('Failed to delete all orders. Please try again.');
-                } finally {
-                    deleteAllBtn.disabled = false;
-                    deleteAllBtn.textContent = prevText;
-                }
-            });
-        }
-
-        onSnapshot(ordersCollection, (snapshot) => {
-            loader.style.display = 'none'; // Hide loader once we get data
-
-            if (snapshot.empty) {
-                ordersContainer.innerHTML = '';
-                noOrdersMessage.style.display = 'block';
-                return;
+                return card;
             }
 
-            noOrdersMessage.style.display = 'none';
-            ordersContainer.innerHTML = ''; // Clear existing orders to prevent duplication
+            const ordersCollection = collection(db, 'orders');
 
-            const orders = [];
-            snapshot.forEach(doc => {
-                orders.push({ id: doc.id, ...doc.data() });
+            const deleteAllBtn = document.getElementById('delete-all-orders');
+            if (deleteAllBtn) {
+                deleteAllBtn.addEventListener('click', async () => {
+                    if (!confirm('Delete ALL orders? This cannot be undone.')) return;
+                    deleteAllBtn.disabled = true;
+                    const prevText = deleteAllBtn.textContent;
+                    deleteAllBtn.textContent = 'Deleting...';
+                    try {
+                        const snap = await getDocs(ordersCollection);
+                        await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'orders', d.id))));
+                    } catch (e) {
+                        console.error('Error deleting all orders:', e);
+                        alert('Failed to delete all orders. Please try again.');
+                    } finally {
+                        deleteAllBtn.disabled = false;
+                        deleteAllBtn.textContent = prevText;
+                    }
+                });
+            }
+
+            onSnapshot(ordersCollection, (snapshot) => {
+                loader.style.display = 'none';
+
+                if (snapshot.empty) {
+                    ordersContainer.innerHTML = '';
+                    noOrdersMessage.style.display = 'block';
+                    return;
+                }
+
+                noOrdersMessage.style.display = 'none';
+                ordersContainer.innerHTML = '';
+
+                const orders = [];
+                snapshot.forEach(docSnap => {
+                    orders.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                orders.sort((a, b) => {
+                     const statusOrder = { 'pending': 1, 'fulfilled': 2, 'delivered': 3 };
+                     if (statusOrder[a.status] !== statusOrder[b.status]) {
+                         return statusOrder[a.status] - statusOrder[b.status];
+                     }
+                     return new Date(b.orderDate) - new Date(a.orderDate);
+                });
+
+                orders.forEach(orderData => {
+                    const orderCard = createOrderCard(orderData);
+                    ordersContainer.appendChild(orderCard);
+                });
+
+            }, (error) => {
+                console.error("Error fetching orders: ", error);
+                loader.style.display = 'none';
+                ordersContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Failed to load orders. Please check the console for errors.</p>`;
             });
-
-            // Sort orders to show pending ones first, then by date
-            orders.sort((a, b) => {
-                 const statusOrder = { 'pending': 1, 'fulfilled': 2, 'delivered': 3 };
-                 if (statusOrder[a.status] !== statusOrder[b.status]) {
-                     return statusOrder[a.status] - statusOrder[b.status];
-                 }
-                 return new Date(b.orderDate) - new Date(a.orderDate);
-            });
-
-            orders.forEach(orderData => {
-                const orderCard = createOrderCard(orderData);
-                ordersContainer.appendChild(orderCard);
-            });
-
-        }, (error) => {
-            console.error("Error fetching orders: ", error);
-            loader.style.display = 'none';
-            ordersContainer.innerHTML = `<p class="text-red-500 text-center col-span-full">Failed to load orders. Please check the console for errors.</p>`;
-        });
-
+        }
     </script>
 </body>
 </html>
