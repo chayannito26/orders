@@ -156,8 +156,8 @@ Create a `.env` file based on `.env.example`:
 ZEPTOMAIL_API_KEY=your_api_key_here
 
 # Email Configuration
-FROM_EMAIL=registration@chayannito26.com
-FROM_NAME=Chayannito 26 Registration
+FROM_EMAIL=shop@chayannito26.com
+FROM_NAME=Chayannito 26 Shop
 
 # Server Configuration
 FLASK_ENV=development

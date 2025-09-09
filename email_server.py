@@ -36,8 +36,8 @@ CORS(app)  # Enable CORS for all routes
 # Configuration
 ZEPTOMAIL_URL = "https://api.zeptomail.com/v1.1/email"
 ZEPTOMAIL_API_KEY = os.getenv('ZEPTOMAIL_API_KEY', 'wSsVR60jrBP3W691zmeqde9qyAwHDl3/Ekl60FqjunP/GqyWpcdolkLJUQLzGPZKEG46RTsV97wgyh4IgzRf2o8tmQ1SWiiF9mqRe1U4J3x17qnvhDzOVmRdlRKALIILxg5umWZoE8oh+g==')
-FROM_EMAIL = os.getenv('FROM_EMAIL', 'registration@chayannito26.com')
-FROM_NAME = os.getenv('FROM_NAME', 'Chayannito 26 Registration')
+FROM_EMAIL = os.getenv('FROM_EMAIL', 'shop@chayannito26.com')
+FROM_NAME = os.getenv('FROM_NAME', 'Chayannito 26 Shop')
 
 class EmailService:
     """Email service for sending order notifications via ZeptoMail"""
