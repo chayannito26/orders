@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')  # Serve static files from current directory
 CORS(app)  # Enable CORS for all routes
 
 # Configuration
@@ -208,7 +208,7 @@ class EmailService:
             # Send email
             response = requests.post(ZEPTOMAIL_URL, data=payload, headers=self.headers, timeout=30)
             
-            if response.status_code == 200:
+            if response.status_code == 201:
                 logger.info(f"Email sent successfully for order {order_id} to {customer_email}")
                 return {
                     'success': True,
@@ -243,9 +243,24 @@ class EmailService:
 # Initialize email service
 email_service = EmailService()
 
+
+# Serve index.html at root
 @app.route('/', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
+def serve_index():
+    """Serve the order dashboard (index.html) at root."""
+    index_path = os.path.join(os.path.dirname(__file__), 'index.html')
+    try:
+        with open(index_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        return html, 200, {'Content-Type': 'text/html'}
+    except Exception as e:
+        logger.error(f"Error serving index.html: {e}")
+        return f"<h1>Error loading dashboard</h1><p>{str(e)}</p>", 500, {'Content-Type': 'text/html'}
+
+# Status endpoint
+@app.route('/status', methods=['GET'])
+def status():
+    """Status endpoint for health checks."""
     return jsonify({
         'status': 'healthy',
         'service': 'Chayannito 26 Email Notification Service',
