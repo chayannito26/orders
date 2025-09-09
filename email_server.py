@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 from flask import Flask, request, jsonify, render_template_string
+from flask_cors import CORS
 from jinja2 import Template
 from dotenv import load_dotenv
 
@@ -30,6 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Configuration
 ZEPTOMAIL_URL = "https://api.zeptomail.com/v1.1/email"
