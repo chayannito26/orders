@@ -33,6 +33,7 @@
         .status-pending { background-color: #fef3c7; color: #92400e; }
         .status-fulfilled { background-color: #dbeafe; color: #1e40af; }
         .status-delivered { background-color: #d1fae5; color: #065f46; }
+        .status-verified { background-color: #dbeafe; color: #1e40af; }
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -189,7 +190,8 @@
                 const statusClass = {
                     pending: 'status-pending',
                     fulfilled: 'status-fulfilled',
-                    delivered: 'status-delivered'
+                    delivered: 'status-delivered',
+                    verified: 'status-verified'
                 }[orderData.status] || 'bg-gray-200 text-gray-800';
 
                 const email = orderData.customerInfo?.email;
@@ -267,6 +269,7 @@
                                 <option value="pending" ${orderData.status === 'pending' ? 'selected' : ''}>Pending</option>
                                 <option value="fulfilled" ${orderData.status === 'fulfilled' ? 'selected' : ''}>Fulfilled</option>
                                 <option value="delivered" ${orderData.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                <option value="verified" ${orderData.status === 'verified' ? 'selected' : ''}>Verified</option>
                             </select>
                             <button class="update-status-btn w-full sm:flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200">
                                 Update Status
@@ -403,7 +406,7 @@
                 });
 
                 orders.sort((a, b) => {
-                     const statusOrder = { 'pending': 1, 'fulfilled': 2, 'delivered': 3 };
+                     const statusOrder = { 'pending': 1, 'fulfilled': 2, 'delivered': 3, 'verified': 4 };
                      if (statusOrder[a.status] !== statusOrder[b.status]) {
                          return statusOrder[a.status] - statusOrder[b.status];
                      }
