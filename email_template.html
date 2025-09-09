@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Chayannito 26</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: #f4f4f4;
+            line-height: 1.6;
+            color: #333;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .order-info h2 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .info-value {
+            color: #333;
+            font-size: 14px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-fulfilled {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-delivered {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .items-section {
+            margin: 30px 0;
+        }
+        .items-section h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .item-details {
+            flex: 1;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .item-variation {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .item-quantity-price {
+            color: #888;
+            font-size: 12px;
+        }
+        .item-total {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .totals-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .total-row.final {
+            border-top: 2px solid #ddd;
+            padding-top: 15px;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .coupon-info {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #065f46;
+        }
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .footer p {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .contact-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .contact-info h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        .contact-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .item-total {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Order Confirmation</h1>
+            <p>Thank you for your order with Chayannito 26!</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Order Information -->
+            <div class="order-info">
+                <h2>Order Details</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Order ID</span>
+                        <span class="info-value">{{ order.orderId or order.orderID or 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Order Date</span>
+                        <span class="info-value">{{ order.formatted_date }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        <span class="status-badge status-{{ order.status }}">{{ order.status.title() }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Customer</span>
+                        <span class="info-value">{{ order.customerInfo.name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="order-info">
+                <h2>Customer Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Name</span>
+                        <span class="info-value">{{ order.customerInfo.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ order.customerInfo.email or 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ order.customerInfo.phone }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Roll Number</span>
+                        <span class="info-value">{{ order.customerInfo.roll }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Department</span>
+                        <span class="info-value">{{ order.customerInfo.department }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">bKash Transaction ID</span>
+                        <span class="info-value">{{ order.customerInfo.bkashTransactionId }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="items-section">
+                <h3>Ordered Items</h3>
+                {% for item in order.items %}
+                <div class="item">
+                    <div class="item-details">
+                        <div class="item-name">{{ item.name }}</div>
+                        {% if item.selectedVariation %}
+                        <div class="item-variation">Variation: {{ item.selectedVariation }}</div>
+                        {% endif %}
+                        <div class="item-quantity-price">Quantity: {{ item.quantity }} × ৳{{ item.price }}</div>
+                    </div>
+                    <div class="item-total">৳{{ item.total }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Coupon Information -->
+            {% if order.appliedCoupon and order.appliedCoupon.code %}
+            <div class="coupon-info">
+                <strong>🎉 Coupon Applied:</strong> {{ order.appliedCoupon.code }} 
+                (Discount: ৳{{ order.discount or order.appliedCoupon.discountValue or 0 }})
+            </div>
+            {% endif %}
+
+            <!-- Order Totals -->
+            <div class="totals-section">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>৳{{ order.total or 0 }}</span>
+                </div>
+                {% if (order.discount or 0) > 0 %}
+                <div class="total-row">
+                    <span>Discount:</span>
+                    <span style="color: #10b981;">-৳{{ order.discount or 0 }}</span>
+                </div>
+                {% endif %}
+                <div class="total-row final">
+                    <span>Final Total:</span>
+                    <span>৳{{ order.finalTotal or ((order.total or 0) - (order.discount or 0)) }}</span>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h4>Need Help?</h4>
+                <p>If you have any questions about your order, please contact us:</p>
+                <p><strong>Email:</strong> registration@chayannito26.com</p>
+                <p><strong>Phone:</strong> Available on our website</p>
+                <p><strong>Website:</strong> <a href="https://chayannito26.com">chayannito26.com</a></p>
+            </div>
+
+            <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">
+                This is an automated email. Please do not reply to this email address.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 Chayannito 26. All rights reserved.</p>
+            <p>Thank you for choosing Chayannito 26!</p>
+        </div>
+    </div>
+</body>
+</html>
