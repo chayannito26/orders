@@ -15,7 +15,7 @@ class EmailServiceClient {
      */
     async checkServiceHealth() {
         try {
-            const response = await fetch(`${this.baseUrl}/`, {
+            const response = await fetch(`${this.baseUrl}/status`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -279,23 +279,9 @@ function addEmailServiceControls() {
 
 // Function to monitor for new orders and send emails
 function setupOrderEmailMonitoring() {
-    // This function should be called when a new order is detected
-    // It integrates with the existing Firebase listener
-    
-    // Store original onSnapshot callback to enhance it
-    window.originalOnSnapshotCallback = null;
-    
-    // Function to send email for new orders
-    window.sendEmailForNewOrder = function(orderData) {
-        if (emailService.isAvailable && orderData.customerInfo && orderData.customerInfo.email) {
-            console.log('Sending email for new order:', orderData.id);
-            emailService.sendOrderEmail(orderData);
-        } else if (!emailService.isAvailable) {
-            console.log('Email service not available, skipping email for order:', orderData.id);
-        } else {
-            console.log('No customer email provided for order:', orderData.id);
-        }
-    };
+    // This function is now disabled to prevent automatic emails.
+    // The functionality is moved to a manual button on each order card.
+    console.log("Automatic email monitoring is disabled.");
 }
 
 // Initialize when DOM is loaded
