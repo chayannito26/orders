@@ -59,6 +59,8 @@
         .info-item {
             display: flex;
             flex-direction: column;
+                gap: 6px;
+                margin-bottom: 8px;
         }
         .info-label {
             font-weight: bold;
@@ -70,6 +72,8 @@
         .info-value {
             color: #333;
             font-size: 14px;
+                word-break: break-word;
+                margin-bottom: 2px;
         }
         .status-badge {
             display: inline-block;
@@ -78,6 +82,7 @@
             font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
+                margin-top: 4px;
         }
         .status-pending {
             background-color: #fef3c7;
@@ -111,12 +116,16 @@
             align-items: center;
             padding: 15px 0;
             border-bottom: 1px solid #eee;
+                gap: 12px;
         }
         .item:last-child {
             border-bottom: none;
         }
         .item-details {
             flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
         }
         .item-name {
             font-weight: bold;
@@ -131,11 +140,13 @@
         .item-quantity-price {
             color: #888;
             font-size: 12px;
+                margin-bottom: 2px;
         }
         .item-total {
             font-weight: bold;
             color: #333;
             font-size: 16px;
+                margin-left: 10px;
         }
         .totals-section {
             background-color: #f8f9fa;
@@ -148,6 +159,7 @@
             justify-content: space-between;
             margin-bottom: 10px;
             font-size: 14px;
+                gap: 10px;
         }
         .total-row.final {
             border-top: 2px solid #ddd;
@@ -202,14 +214,33 @@
             }
             .info-grid {
                 grid-template-columns: 1fr;
+                    gap: 10px;
             }
             .item {
                 flex-direction: column;
                 align-items: flex-start;
+                    gap: 8px;
+                    padding: 18px 0;
             }
             .item-total {
                 margin-top: 10px;
+                    margin-left: 0;
             }
+                .order-info {
+                    padding: 18px 10px;
+                }
+                .content {
+                    padding: 18px 8px;
+                }
+                .totals-section {
+                    padding: 14px 8px;
+                }
+                .contact-info {
+                    padding: 14px 8px;
+                }
+                .footer {
+                    padding: 18px 8px;
+                }
         }
     </style>
 </head>
