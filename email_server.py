@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 
 from flask import Flask, request, jsonify, render_template_string
@@ -67,7 +67,9 @@ class EmailService:
         try:
             if order_date:
                 dt = datetime.fromisoformat(order_date.replace('Z', '+00:00'))
-                formatted_date = dt.strftime('%B %d, %Y at %I:%M %p')
+                # Convert to GMT+6 (Asia/Dhaka)
+                dt_gmt6 = dt.astimezone(timezone(timedelta(hours=6)))
+                formatted_date = dt_gmt6.strftime('%B %d, %Y at %I:%M %p (GMT+6)')
             else:
                 formatted_date = 'N/A'
         except (ValueError, AttributeError):
